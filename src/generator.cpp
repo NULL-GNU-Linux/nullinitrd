@@ -220,8 +220,38 @@ void Generator::copy_module(const std::string& module) {
             if (!relative_path_str.empty() && relative_path_str.front() == '/') {
                 relative_path_str = relative_path_str.substr(1);
             }
-            fs::path dst = work_dir / "usr/lib/modules" / kernel_version / relative_path_str;
-            copy_file(src, dst);
+
+            std::string dst_path = relative_path_str;
+            bool needs_decompress = false;
+            std::string decompress_cmd;
+
+            if (dst_path.size() > 4 && dst_path.substr(dst_path.size() - 4) == ".zst") {
+                dst_path = dst_path.substr(0, dst_path.size() - 4);
+                decompress_cmd = "zstd -d -c";
+                needs_decompress = true;
+            } else if (dst_path.size() > 3 && dst_path.substr(dst_path.size() - 3) == ".xz") {
+                dst_path = dst_path.substr(0, dst_path.size() - 3);
+                decompress_cmd = "xz -d -c";
+                needs_decompress = true;
+            } else if (dst_path.size() > 3 && dst_path.substr(dst_path.size() - 3) == ".gz") {
+                dst_path = dst_path.substr(0, dst_path.size() - 3);
+                decompress_cmd = "gzip -d -c";
+                needs_decompress = true;
+            }
+
+            fs::path dst = work_dir / "usr/lib/modules" / kernel_version / dst_path;
+            fs::create_directories(dst.parent_path());
+
+            if (needs_decompress) {
+                if (verbose) {
+                    std::cout << ":: decompressing " << src << " -> " << dst << std::endl;
+                }
+                std::string full_cmd = decompress_cmd + " '" + mod_file + "' > '" + dst.string() + "'";
+                system(full_cmd.c_str());
+                chmod(dst.c_str(), 0644);
+            } else {
+                copy_file(src, dst);
+            }
         }
     }
     pclose(pipe);
