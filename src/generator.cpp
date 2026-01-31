@@ -1,5 +1,6 @@
 #include "generator.hpp"
 #include "hooks.hpp"
+#include <filesystem>
 #include <iostream>
 #include <algorithm>
 #include <cstdlib>
@@ -44,7 +45,6 @@ void Generator::create_structure() {
     create_directory(work_dir / "run");
     create_directory(work_dir / "tmp");
     create_directory(work_dir / "mnt/root");
-
     if (config.is_enabled("LVM")) {
         create_directory(work_dir / "etc/lvm");
     }
@@ -242,7 +242,7 @@ void Generator::copy_module(const std::string& module) {
 
             fs::path dst = work_dir / "usr/lib/modules" / kernel_version / dst_path;
             fs::create_directories(dst.parent_path());
-
+            fs::create_directories(work_dir / "mnt/root");
             if (needs_decompress) {
                 if (verbose) {
                     std::cout << ":: decompressing " << src << " -> " << dst << std::endl;
