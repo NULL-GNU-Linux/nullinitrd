@@ -19,9 +19,9 @@ Generator::Generator(const Config& cfg, const std::string& kernel_ver, bool v)
     create_structure();
     create_symlinks();
     default_modules = {
-        "nvme", "nvme-core", "ahci", "sd_mod", "sr_mod",
-        "ext4", "btrfs", "xfs", "vfat", "fat",
-        "dm-mod", "dm-crypt",
+        "nvme", "nvme-core", "ahci", "sd_mod", "sr_mod", "nvme-auth", "nvme-keyring",
+        "ext4", "btrfs", "xfs", "vfat", "fat", "wmi", "video", "ttm", "mmc_core", "mmc_block",
+        "dm-mod", "dm-crypt", "i915", "rfkill", "uas", "usb-storage", "idma64", "cec", "snd",
         "raid0", "raid1", "raid456", "md-mod"
     };
 }

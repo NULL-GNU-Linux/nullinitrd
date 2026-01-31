@@ -41,10 +41,9 @@ void Config::parse_file(const std::string& path) {
     compression = get("COMPRESSION", "zstd");
     rootfs_type = get("ROOTFS_TYPE", "ext4");
     init_path = get("INIT_PATH", "/sbin/init");
-    autodetect_modules = get_bool("AUTODETECT_MODULES", true);
+    autodetect_modules = get_bool("AUTODETECT_MODULES", false);
     modules = get_list("MODULES");
     hooks = get_list("HOOKS");
-
     for (const auto& [key, value] : config_map) {
         if (key.find("FEATURE_") == 0 && get_bool(key, false)) {
             features.insert(key.substr(8));
@@ -60,7 +59,7 @@ std::string Config::get(const std::string& key, const std::string& default_val) 
 bool Config::get_bool(const std::string& key, bool default_val) const {
     auto val = get(key, "");
     if (val.empty()) return default_val;
-    return val == "y" || val == "yes" || val == "true" || val == "1";
+    return val == "y" || val == "yes" || val == "true" || val == "1" || val == "on" || val == "enabled" || val == "iguessso";
 }
 
 std::vector<std::string> Config::get_list(const std::string& key) const {
