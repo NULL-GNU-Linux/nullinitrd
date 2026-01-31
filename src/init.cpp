@@ -42,15 +42,26 @@ static void panic(const char *msg) {
 }
 
 static void do_mount(const char *src, const char *tgt, const char *type, unsigned long flags, const void *data) {
+    char parent[PATH_MAX];
+    strncpy(parent, tgt, sizeof(parent));
+    parent[sizeof(parent)-1] = '\0';
+    char *slash = strrchr(parent, '/');
+    if (slash) {
+        *slash = '\0';
+        mkdir(parent, 0755);
+    }
+
     mkdir(tgt, 0755);
     if (mount(src, tgt, type, flags, data) < 0 && errno != EBUSY) {
-        ERR(":: mount failed: ");
-        write(STDERR_FILENO, tgt, strlen(tgt));
-        ERR(" (");
-        print_str(strerror(errno));
-        ERR(")\n");
+        ERR(":: mount failed\n");
+        ERR("   source: "); write(STDERR_FILENO, src, strlen(src)); ERR("\n");
+        ERR("   target: "); write(STDERR_FILENO, tgt, strlen(tgt)); ERR("\n");
+        ERR("   type  : "); write(STDERR_FILENO, type ? type : "(null)", type ? strlen(type) : 6); ERR("\n");
+        ERR("   flags : "); char buf[32]; snprintf(buf, sizeof(buf), "%#lx", flags); ERR(buf); ERR("\n");
+        ERR("   errno : "); char errbuf[64]; snprintf(errbuf, sizeof(errbuf), "%d (%s)\n", errno, strerror(errno)); ERR(errbuf);
     }
 }
+
 
 static void parse_cmdline() {
     int fd = open("/proc/cmdline", O_RDONLY);
