@@ -12,10 +12,12 @@
 #include <sys/reboot.h>
 #include <unistd.h>
 #include <linux/reboot.h>
-
 #define MSG(x) write(STDOUT_FILENO, x, sizeof(x) - 1)
 #define ERR(x) write(STDERR_FILENO, x, sizeof(x) - 1)
-
+#define MAX_MODULES 512
+#define MAX_DEPS 32
+#define MAX_PATH_LEN 512
+#define MAX_NAME_LEN 128
 static char cmdline[4096];
 static char root_dev[256] = "/dev/sda1";
 static char root_type[32] = "ext4";
@@ -23,7 +25,17 @@ static char root_flags[256] = "ro";
 static char init_path[256] = "/sbin/init";
 static int root_delay = 0;
 static bool verbose = false;
+struct ModuleEntry {
+    char name[MAX_NAME_LEN];
+    char path[MAX_PATH_LEN];
+    char deps[MAX_DEPS][MAX_NAME_LEN];
+    int dep_count;
+    bool loaded;
+};
 
+static ModuleEntry modules[MAX_MODULES];
+static int module_count = 0;
+static char moddir[256];
 static void print_str(const char *s) {
     write(STDOUT_FILENO, s, strlen(s));
 }
@@ -114,7 +126,7 @@ static void parse_cmdline() {
     }
 }
 
-static int load_module(const char *path) {
+static int load_module_file(const char *path) {
     int fd = open(path, O_RDONLY);
     if (fd < 0) {
         if (verbose) {
@@ -148,37 +160,177 @@ static int load_module(const char *path) {
         MSG("\n");
     }
 
-    return 0;
+    return (ret == 0 || err == EEXIST) ? 0 : -1;
 }
 
-static int module_count = 0;
+static void path_to_name(const char *path, char *name, size_t name_size) {
+    const char *base = strrchr(path, '/');
+    if (base) {
+        base++;
+    } else {
+        base = path;
+    }
 
-static void load_modules_from_dir(const char *dir) {
-    DIR *d = opendir(dir);
-    if (!d) {
-        if (verbose) {
-            MSG("::   cannot open dir: ");
-            print_str(dir);
+    strncpy(name, base, name_size - 1);
+    name[name_size - 1] = '\0';
+    char *ext = strstr(name, ".ko");
+    if (ext) {
+        *ext = '\0';
+    }
+
+    for (char *p = name; *p; p++) {
+        if (*p == '-') *p = '_';
+    }
+}
+
+static int find_module_by_name(const char *name) {
+    char normalized[MAX_NAME_LEN];
+    strncpy(normalized, name, sizeof(normalized) - 1);
+    normalized[sizeof(normalized) - 1] = '\0';
+    for (char *p = normalized; *p; p++) {
+        if (*p == '-') *p = '_';
+    }
+
+    for (int i = 0; i < module_count; i++) {
+        if (strcmp(modules[i].name, normalized) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int load_module_with_deps(int idx) {
+    if (idx < 0 || idx >= module_count) return -1;
+    if (modules[idx].loaded) return 0;
+    for (int i = 0; i < modules[idx].dep_count; i++) {
+        int dep_idx = find_module_by_name(modules[idx].deps[i]);
+        if (dep_idx >= 0) {
+            if (load_module_with_deps(dep_idx) < 0) {
+                if (verbose) {
+                    MSG("::   warning: failed to load dependency ");
+                    print_str(modules[idx].deps[i]);
+                    MSG(" for ");
+                    print_str(modules[idx].name);
+                    MSG("\n");
+                }
+            }
+        } else if (verbose) {
+            MSG("::   warning: dependency not found: ");
+            print_str(modules[idx].deps[i]);
             MSG("\n");
+        }
+    }
+
+    char full_path[MAX_PATH_LEN];
+    snprintf(full_path, sizeof(full_path), "%s/%s", moddir, modules[idx].path);
+    if (load_module_file(full_path) == 0) {
+        modules[idx].loaded = true;
+        return 0;
+    }
+
+    return -1;
+}
+
+static void parse_modules_dep() {
+    char dep_path[MAX_PATH_LEN];
+    snprintf(dep_path, sizeof(dep_path), "%s/modules.dep", moddir);
+    int fd = open(dep_path, O_RDONLY);
+    if (fd < 0) {
+        if (verbose) {
+            MSG("::   modules.dep not found, will load without dependency info\n");
         }
         return;
     }
 
-    struct dirent *ent;
-    char path[512];
+    static char dep_buf[65536];
+    ssize_t total = 0;
+    ssize_t n;
+    while ((n = read(fd, dep_buf + total, sizeof(dep_buf) - total - 1)) > 0) {
+        total += n;
+        if (total >= (ssize_t)(sizeof(dep_buf) - 1)) break;
+    }
+    close(fd);
+    dep_buf[total] = '\0';
 
+    if (verbose) {
+        MSG("::   parsing modules.dep (");
+        print_num((int)total);
+        MSG(" bytes)\n");
+    }
+
+    char *line = dep_buf;
+    while (*line && module_count < MAX_MODULES) {
+        char *newline = strchr(line, '\n');
+        if (newline) *newline = '\0';
+        if (*line) {
+            char *colon = strchr(line, ':');
+            if (colon) {
+                *colon = '\0';
+                ModuleEntry *entry = &modules[module_count];
+                strncpy(entry->path, line, MAX_PATH_LEN - 1);
+                entry->path[MAX_PATH_LEN - 1] = '\0';
+                path_to_name(line, entry->name, MAX_NAME_LEN);
+                entry->dep_count = 0;
+                entry->loaded = false;
+                char *deps = colon + 1;
+                while (*deps == ' ') deps++;
+                while (*deps && entry->dep_count < MAX_DEPS) {
+                    char *space = strchr(deps, ' ');
+                    if (space) *space = '\0';
+
+                    if (*deps) {
+                        path_to_name(deps, entry->deps[entry->dep_count], MAX_NAME_LEN);
+                        entry->dep_count++;
+                    }
+
+                    if (space) {
+                        deps = space + 1;
+                        while (*deps == ' ') deps++;
+                    } else {
+                        break;
+                    }
+                }
+
+                module_count++;
+            }
+        }
+
+        if (newline) {
+            line = newline + 1;
+        } else {
+            break;
+        }
+    }
+
+    if (verbose) {
+        MSG("::   found ");
+        print_num(module_count);
+        MSG(" modules in modules.dep\n");
+    }
+}
+
+static void scan_modules_dir(const char *dir) {
+    DIR *d = opendir(dir);
+    if (!d) return;
+    struct dirent *ent;
+    char path[MAX_PATH_LEN];
     while ((ent = readdir(d))) {
         if (ent->d_name[0] == '.') continue;
-
         snprintf(path, sizeof(path), "%s/%s", dir, ent->d_name);
-
         struct stat st;
         if (stat(path, &st) < 0) continue;
-
         if (S_ISDIR(st.st_mode)) {
-            load_modules_from_dir(path);
-        } else if (strstr(ent->d_name, ".ko")) {
-            if (load_module(path) == 0) {
+            scan_modules_dir(path);
+        } else if (strstr(ent->d_name, ".ko") && module_count < MAX_MODULES) {
+            char name[MAX_NAME_LEN];
+            path_to_name(ent->d_name, name, MAX_NAME_LEN);
+            if (find_module_by_name(name) < 0) {
+                ModuleEntry *entry = &modules[module_count];
+                strncpy(entry->name, name, MAX_NAME_LEN - 1);
+                const char *rel_path = path + strlen(moddir) + 1;
+                strncpy(entry->path, rel_path, MAX_PATH_LEN - 1);
+                entry->dep_count = 0;
+                entry->loaded = false;
                 module_count++;
             }
         }
@@ -195,7 +347,6 @@ static void load_modules() {
         return;
     }
 
-    char moddir[256];
     snprintf(moddir, sizeof(moddir), "/usr/lib/modules/%s", uts.release);
 
     if (verbose) {
@@ -210,10 +361,19 @@ static void load_modules() {
         return;
     }
 
-    load_modules_from_dir(moddir);
+    parse_modules_dep();
+    scan_modules_dir(moddir);
+    int loaded_count = 0;
+    for (int i = 0; i < module_count; i++) {
+        if (!modules[i].loaded) {
+            if (load_module_with_deps(i) == 0) {
+                loaded_count++;
+            }
+        }
+    }
 
     MSG("::   loaded ");
-    print_num(module_count);
+    print_num(loaded_count);
     MSG(" modules\n");
 }
 
