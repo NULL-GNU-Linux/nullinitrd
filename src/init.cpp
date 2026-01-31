@@ -163,6 +163,17 @@ static int load_module_file(const char *path) {
     return (ret == 0 || err == EEXIST) ? 0 : -1;
 }
 
+static void strip_compression_ext(char *path) {
+    size_t len = strlen(path);
+    if (len > 4 && strcmp(path + len - 4, ".zst") == 0) {
+        path[len - 4] = '\0';
+    } else if (len > 3 && strcmp(path + len - 3, ".xz") == 0) {
+        path[len - 3] = '\0';
+    } else if (len > 3 && strcmp(path + len - 3, ".gz") == 0) {
+        path[len - 3] = '\0';
+    }
+}
+
 static void path_to_name(const char *path, char *name, size_t name_size) {
     const char *base = strrchr(path, '/');
     if (base) {
@@ -269,7 +280,8 @@ static void parse_modules_dep() {
                 ModuleEntry *entry = &modules[module_count];
                 strncpy(entry->path, line, MAX_PATH_LEN - 1);
                 entry->path[MAX_PATH_LEN - 1] = '\0';
-                path_to_name(line, entry->name, MAX_NAME_LEN);
+                strip_compression_ext(entry->path);
+                path_to_name(entry->path, entry->name, MAX_NAME_LEN);
                 entry->dep_count = 0;
                 entry->loaded = false;
                 char *deps = colon + 1;
