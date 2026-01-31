@@ -23,7 +23,6 @@ for bin in loadkeys setfont; do
     BIN_PATH=$(command -v $bin)
     if [ -n "$BIN_PATH" ]; then
         cp "$BIN_PATH" "$WORKDIR/bin/"
-        
         for lib in $(ldd "$BIN_PATH" | grep -o '/[^ ]*'); do
             if [ -f "$lib" ]; then
                 cp "$lib" "$WORKDIR/lib/" 2>/dev/null || cp "$lib" "$WORKDIR/lib64/" 2>/dev/null
