@@ -264,18 +264,13 @@ static void switch_root() {
 
 int main() {
     MSG(":: nullinitrd\n");
-
     do_mount("proc", "/proc", "proc", MS_NOSUID | MS_NOEXEC | MS_NODEV, nullptr);
     do_mount("sysfs", "/sys", "sysfs", MS_NOSUID | MS_NOEXEC | MS_NODEV, nullptr);
     do_mount("devtmpfs", "/dev", "devtmpfs", MS_NOSUID, "mode=0755");
     do_mount("tmpfs", "/run", "tmpfs", MS_NOSUID | MS_NODEV, "mode=0755");
-
     mkdir("/dev/pts", 0755);
-    do_mount("devpts", "/dev/pts", "devpts", MS_NOSUID | MS_NOEXEC, "gid=5,mode=0620");
-
     parse_cmdline();
     load_modules();
-
     if (root_delay > 0) {
         MSG(":: waiting ");
         print_num(root_delay);
@@ -284,18 +279,14 @@ int main() {
     }
 
     char *dev = resolve_device(root_dev);
-
     MSG(":: mounting root: ");
     print_str(dev);
     MSG(" (");
     print_str(root_type);
     MSG(")\n");
-
     mkdir("/mnt/root", 0755);
-
     unsigned long mflags = 0;
     if (strstr(root_flags, "ro")) mflags |= MS_RDONLY;
-
     for (int i = 0; i < 30; i++) {
         if (mount(dev, "/mnt/root", root_type, mflags, nullptr) == 0) break;
         if (i == 29) {
@@ -314,23 +305,17 @@ int main() {
     }
 
     MSG(":: switching root\n");
-
     umount("/proc");
     umount("/sys");
-    umount("/dev/pts");
     umount("/dev");
     umount("/run");
-
     switch_root();
-
     MSG(":: exec ");
     print_str(init_path);
     MSG("\n");
-
     char *argv[] = {init_path, nullptr};
     char *envp[] = {(char*)"HOME=/", (char*)"TERM=linux", (char*)"PATH=/sbin:/bin:/usr/sbin:/usr/bin", nullptr};
     execve(init_path, argv, envp);
-
     ERR(":: execve failed: ");
     print_str(strerror(errno));
     ERR("\n");

@@ -243,6 +243,10 @@ void Generator::copy_module(const std::string& module) {
             fs::path dst = work_dir / "usr/lib/modules" / kernel_version / dst_path;
             fs::create_directories(dst.parent_path());
             fs::create_directories(work_dir / "mnt/root");
+            fs::create_directories(work_dir / "dev");
+            fs::create_directories(work_dir / "dev/pts");
+            fs::create_directories(work_dir / "proc");
+            fs::create_directories(work_dir / "sys");
             if (needs_decompress) {
                 if (verbose) {
                     std::cout << ":: decompressing " << src << " -> " << dst << std::endl;
