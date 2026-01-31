@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
         kernel_version = utils::get_kernel_version();
     }
     if (output_file.empty()) {
-        output_file = "/boot/initrd-" + kernel_version + ".img";
+        output_file = "/boot/initrd.img";
     }
 
     std::cout << ":: nullinitrd" << std::endl;
