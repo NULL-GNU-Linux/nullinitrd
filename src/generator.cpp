@@ -166,6 +166,16 @@ void Generator::copy_binary_with_deps(const std::string& binary) {
 void Generator::copy_binaries() {
     std::cout << ":: copying binaries..." << std::endl;
 
+    copy_binary_with_deps("kmod");
+    fs::path kmod_dst = work_dir / "usr/bin/kmod";
+    if (fs::exists(kmod_dst)) {
+        fs::create_symlink("kmod", work_dir / "usr/bin/modprobe");
+        fs::create_symlink("kmod", work_dir / "usr/bin/insmod");
+        fs::create_symlink("kmod", work_dir / "usr/bin/rmmod");
+        fs::create_symlink("kmod", work_dir / "usr/bin/lsmod");
+        fs::create_symlink("kmod", work_dir / "usr/bin/depmod");
+    }
+
     if (config.is_enabled("LVM")) {
         copy_binary_with_deps("lvm");
     }
@@ -275,14 +285,18 @@ void Generator::copy_modules() {
         copy_module(mod);
     }
 
-    std::string dep_src = "/usr/lib/modules/" + kernel_version + "/modules.dep";
-    if (fs::exists(dep_src)) {
-        copy_file(dep_src, work_dir / "usr/lib/modules" / kernel_version / "modules.dep");
-    }
-
-    std::string alias_src = "/usr/lib/modules/" + kernel_version + "/modules.alias";
-    if (fs::exists(alias_src)) {
-        copy_file(alias_src, work_dir / "usr/lib/modules" / kernel_version / "modules.alias");
+    std::cout << ":: generating module dependencies..." << std::endl;
+    std::string depmod_cmd = "depmod -b " + work_dir.string() + " " + kernel_version;
+    if (system(depmod_cmd.c_str()) != 0) {
+        std::cerr << ":: [!] depmod failed, falling back to copying modules.dep" << std::endl;
+        std::string dep_src = "/usr/lib/modules/" + kernel_version + "/modules.dep";
+        if (fs::exists(dep_src)) {
+            copy_file(dep_src, work_dir / "usr/lib/modules" / kernel_version / "modules.dep");
+        }
+        std::string alias_src = "/usr/lib/modules/" + kernel_version + "/modules.alias";
+        if (fs::exists(alias_src)) {
+            copy_file(alias_src, work_dir / "usr/lib/modules" / kernel_version / "modules.alias");
+        }
     }
 }
 

@@ -25,7 +25,7 @@ nullinitrd
 
 | Option | Description |
 |--------|-------------|
-| `-o, --output FILE` | Output initramfs file (default: `/boot/initrd-<kernel_version>.img`) |
+| `-o, --output FILE` | Output initramfs file (default: `/boot/initrd.img`) |
 | `-c, --config FILE` | Configuration file (default: `/etc/nullinitrd/config`) |
 | `-k, --kernel VER` | Kernel version (default: current) |
 | `-v, --verbose` | Verbose output |
@@ -58,13 +58,16 @@ Supported: `zstd`, `gzip`, `xz`, `lz4`, `bzip2`, `lzma`, `none`
 
 | Parameter | Description |
 |-----------|-------------|
-| `root=` | Root device (e.g., `/dev/sda1`, `UUID=...`, `PARTUUID=...`) |
+| `root=` | Root device (e.g., `/dev/sda1`, `UUID=...`, `PARTUUID=...`, `LABEL=...`) |
 | `rootfstype=` | Root filesystem type |
 | `rootflags=` | Mount flags for root |
 | `rootdelay=` | Seconds to wait before mounting root |
 | `init=` | Path to init on root filesystem |
 | `rw` | Mount root read-write |
 | `ro` | Mount root read-only |
+| `rd.debug` | Enable verbose initramfs output |
+| `initrd.debug` | Alias for `rd.debug` |
+| `rd.modules=` | Additional modules to load (comma-separated) |
 
 ## Build Configuration
 
@@ -75,8 +78,34 @@ Run `make menuconfig` or edit `.config`:
 | `CONFIG_STATIC=y` | Static linking |
 | `CONFIG_DEBUG=y` | Debug build |
 | `CONFIG_LTO=y` | Link-time optimization |
-| `CONFIG_FEATURE_LVM=y` | Include LVM tools |
-| `CONFIG_FEATURE_LUKS=y` | Include cryptsetup |
-| `CONFIG_FEATURE_MDADM=y` | Include mdadm |
-| `CONFIG_FEATURE_BTRFS=y` | Include btrfs modules |
-| `CONFIG_FEATURE_ZFS=y` | Include ZFS modules |
+
+## Default Modules
+
+The following modules are loaded by default (if available):
+
+- **NVMe**: `nvme`, `nvme_core`
+- **SATA/SCSI**: `ahci`, `sd_mod`, `sr_mod`
+- **Filesystems**: `ext4`, `btrfs`, `xfs`, `vfat`, `fat`
+- **USB**: `usb_storage`, `uas`, `ehci_hcd`, `ehci_pci`, `xhci_hcd`, `xhci_pci`, `ohci_hcd`, `ohci_pci`
+- **Device Mapper**: `dm_mod`, `dm_crypt`
+- **RAID**: `raid0`, `raid1`, `raid456`, `md_mod`
+
+Additional modules can be specified via the `MODULES` config option or the `rd.modules=` kernel parameter.
+
+## Features
+
+Enable features in the config file to include additional tools:
+
+| Feature | Description |
+|---------|-------------|
+| `FEATURE_LVM=y` | Include LVM tools (`lvm`) |
+| `FEATURE_LUKS=y` | Include disk encryption (`cryptsetup`) |
+| `FEATURE_MDADM=y` | Include software RAID (`mdadm`) |
+
+## Hooks
+
+Custom hooks can be placed in `/usr/share/nullinitrd/hooks/` and enabled via the `HOOKS` config option.
+
+## Dependencies
+
+`nullinitrd` currently only depends on `kmod`.
