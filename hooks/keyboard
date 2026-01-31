@@ -1,15 +1,11 @@
 #!/bin/sh
-# hooks/keyboard
-
 if [ -z "$NULLINITRD_WORKDIR" ]; then
     echo "Error: NULLINITRD_WORKDIR not set"
     exit 1
 fi
 
 WORKDIR="$NULLINITRD_WORKDIR"
-
 mkdir -p "$WORKDIR/etc"
-
 if [ -f /etc/vconsole.conf ]; then
     cp /etc/vconsole.conf "$WORKDIR/etc/"
 fi

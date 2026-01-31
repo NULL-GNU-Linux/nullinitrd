@@ -1,12 +1,9 @@
 PACKAGE = nullinitrd
 VERSION = 1.0.0
-
 -include .config
-
 CXX ?= g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -DVERSION=\"$(VERSION)\"
 LDFLAGS =
-
 ifeq ($(CONFIG_STATIC),y)
 LDFLAGS += -static
 endif
@@ -23,31 +20,24 @@ endif
 SRCDIR = src
 OBJDIR = obj
 BINDIR = bin
-
 GEN_SOURCES = $(SRCDIR)/main.cpp $(SRCDIR)/config.cpp $(SRCDIR)/generator.cpp $(SRCDIR)/hooks.cpp $(SRCDIR)/utils.cpp
 GEN_OBJECTS = $(GEN_SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 GEN_TARGET = $(BINDIR)/$(PACKAGE)
-
 INIT_SOURCE = $(SRCDIR)/init.cpp
 INIT_OBJECT = $(OBJDIR)/init.o
 INIT_TARGET = $(BINDIR)/init
-
 PREFIX ?= /usr
 BINPREFIX = $(PREFIX)/bin
 CONFDIR = /etc/$(PACKAGE)
 DATADIR = $(PREFIX)/share/$(PACKAGE)
 HOOKSDIR = $(DATADIR)/hooks
-
 .PHONY: all clean install uninstall menuconfig defconfig help
-
 all: $(GEN_TARGET) $(INIT_TARGET)
-
 $(GEN_TARGET): $(GEN_OBJECTS) | $(BINDIR)
 	$(CXX) $(GEN_OBJECTS) -o $@ $(LDFLAGS)
 ifneq ($(CONFIG_DEBUG),y)
 	strip $@
 endif
-
 $(INIT_TARGET): $(INIT_OBJECT) | $(BINDIR)
 	$(CXX) $(INIT_OBJECT) -o $@ -static
 	strip $@

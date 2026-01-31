@@ -19,7 +19,6 @@ SELECTED=$(dialog --title "nullinitrd Configuration" \
 CONFIG_STATIC=n CONFIG_DEBUG=n CONFIG_LTO=n
 CONFIG_FEATURE_LVM=n CONFIG_FEATURE_LUKS=n CONFIG_FEATURE_MDADM=n
 CONFIG_FEATURE_BTRFS=n CONFIG_FEATURE_ZFS=n
-
 for item in $SELECTED; do
     case $(echo "$item" | tr -d '"') in
         STATIC) CONFIG_STATIC=y ;;
