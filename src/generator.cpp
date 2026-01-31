@@ -13,6 +13,7 @@ Generator::Generator(const Config& cfg, const std::string& kernel_ver, bool v)
     if (!tmp) {
         throw std::runtime_error(":: [!] failed to create temp directory");
     }
+    chmod(tmp, 0755);
     work_dir = tmp;
     create_structure();
     create_symlinks();
