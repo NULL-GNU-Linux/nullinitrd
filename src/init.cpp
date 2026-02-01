@@ -177,9 +177,7 @@ static void load_modules() {
         while (mod) {
             char *argv[] = {
                 (char*)"/usr/bin/modprobe",
-                (char*)"-q",
-                (char*)"-a",
-                (char*)"-b",
+                (char*)"-qab",
                 mod,
                 nullptr
             };
