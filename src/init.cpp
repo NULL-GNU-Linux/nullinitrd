@@ -154,9 +154,7 @@ static void load_modules() {
     for (int i = 0; default_modules[i]; i++) {
         char *argv[] = {
             (char*)"/usr/bin/modprobe",
-            (char*)"-q",
-            (char*)"-a",
-            (char*)"-b",
+            (char*)"-qab",
             (char*)default_modules[i],
             nullptr
         };
