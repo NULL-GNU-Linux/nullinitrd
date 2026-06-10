@@ -35,7 +35,7 @@ void Generator::create_directory(const fs::path& path) {
 }
 
 void Generator::create_structure() {
-    log_job("creating structure...");
+    log_info("creating structure...");
     create_directory(work_dir / "usr/bin");
     create_directory(work_dir / "usr/lib");
     create_directory(work_dir / "usr/lib64");
@@ -55,7 +55,7 @@ void Generator::create_structure() {
 }
 
 void Generator::create_symlinks() {
-    log_job("creating symlinks...");
+    log_info("creating symlinks...");
     auto safe_symlink = [this](const char* target, const fs::path& link) {
         if (fs::exists(link) || fs::is_symlink(link)) fs::remove(link);
         fs::create_symlink(target, link);
@@ -165,7 +165,7 @@ void Generator::copy_binary_with_deps(const std::string& binary) {
 }
 
 void Generator::copy_binaries() {
-    log_job("copying binaries...");
+    log_info("copying binaries...");
 
     copy_binary_with_deps("kmod");
     fs::path kmod_dst = work_dir / "usr/bin/kmod";
@@ -269,7 +269,7 @@ void Generator::copy_module(const std::string& module) {
 }
 
 void Generator::copy_modules() {
-    log_job("copying kernel modules...");
+    log_info("copying kernel modules...");
     create_directory(work_dir / "usr/lib/modules" / kernel_version);
 
     std::vector<std::string> modules_to_copy;
@@ -302,7 +302,7 @@ void Generator::copy_modules() {
 }
 
 void Generator::create_init() {
-    log_job("installing init...");
+    log_info("installing init...");
 
     std::vector<std::string> init_paths = {
         "/usr/share/nullinitrd/init",
@@ -328,7 +328,7 @@ void Generator::create_init() {
 }
 
 void Generator::run_hooks() {
-    log_job("running hooks...");
+    log_info("running hooks...");
     HookManager hook_mgr(config, work_dir, kernel_version, verbose);
     for (const auto& hook : config.hooks) {
         hook_mgr.run_hook(hook);
@@ -347,7 +347,7 @@ std::string Generator::get_compression_cmd() {
 }
 
 void Generator::pack(const std::string& output) {
-    log_job("packing initramfs...");
+    log_info("packing initramfs...");
     std::string cpio_cmd = "cd " + work_dir.string() + " && find . | cpio -o -H newc 2>/dev/null";
     std::string compress_cmd = get_compression_cmd();
     std::string full_cmd = cpio_cmd + " | " + compress_cmd + " > " + output;
@@ -356,4 +356,7 @@ void Generator::pack(const std::string& output) {
         throw std::runtime_error("failed to pack initramfs");
     }
     fs::remove_all(work_dir);
+    if (fs::exists(output)) {
+        throw std::runtime_error("failed to pack initramfs");
+    }
 }
