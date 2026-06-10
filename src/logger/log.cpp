@@ -7,7 +7,7 @@
  *  std::string msg - message to print
  */
 void log_job(std::string msg) {
-    std::cout << "\e[94;1m::\e[0m " << msg << "\e[0m\n";
+    std::cout << "\e[94;1m::\e[0m \e[1m" << msg << "\e[0m\n";
 }
 
 /*
@@ -16,7 +16,7 @@ void log_job(std::string msg) {
  *  std::string msg - message to print
  */
 void log_info(std::string msg) {
-    std::cout << "\e[34;1m  *\e[0m " << msg << "\e[0m\n";
+    std::cout << "\e[34m  *\e[0m " << msg << "\e[0m\n";
 }
 
 /*
@@ -25,7 +25,7 @@ void log_info(std::string msg) {
  *  std::string msg - message to print
  */
 void log_warning(std::string msg) {
-    std::cout << "\e[33;1m  !\e[0m " << msg << "\e[0m\n";
+    std::cout << "\e[33m  !\e[0m " << msg << "\e[0m\n";
 }
 
 /*
@@ -34,7 +34,7 @@ void log_warning(std::string msg) {
  *  std::string msg - message to print
  */
 void log_error(std::string msg) {
-    std::cout << "\e[31;1m  x\e[0m " << msg << "\e[0m\n";
+    std::cout << "\e[31m  x\e[0m " << msg << "\e[0m\n";
 }
 
 /*
@@ -43,5 +43,5 @@ void log_error(std::string msg) {
  *  std::string msg - message to print
  */
 void log_done(std::string msg) {
-    std::cout << "\e[32;1m  *\e[0m " << msg << "\e[0m\n";
+    std::cout << "\e[32;1m::\e[0m " << msg << "\e[0m\n";
 }
