@@ -19,6 +19,12 @@ void HookManager::run_script(const fs::path& script) {
     }
 }
 
+/*
+ * Find a hook in /usr/[local]/share/nullinitrd/hooks or /etc/nullinitrd/hooks,
+ * return false if not found or true if found.
+ * Arguments:
+ *   const std::string& hook_name - the hook to find
+ */
 bool HookManager::find_and_run(const std::string& hook_name) {
     std::vector<std::string> search_paths = {
         "/etc/nullinitrd/hooks",
@@ -40,6 +46,11 @@ bool HookManager::find_and_run(const std::string& hook_name) {
     return false;
 }
 
+/*
+ * Run a hook.
+ * Arguments:
+ *  const std::string& hook_name - name of the hook
+ */
 void HookManager::run_hook(const std::string& hook_name) {
     if (!find_and_run(hook_name)) {
         log_warning("hook not found: " + hook_name);

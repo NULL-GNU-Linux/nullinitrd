@@ -24,6 +24,10 @@ static bool verbose = false;
 
 static char modules_to_load[4096] = "";
 
+/*
+ * Enter infinite sleep after a critical error occurs
+ * TODO: add a recovery shell
+ */
 static void panic(const char *msg) {
     char buf[512];
     snprintf(buf, sizeof(buf), "PANIC: %s", msg);
@@ -107,6 +111,9 @@ static void parse_cmdline() {
     }
 }
 
+/*
+ * Load kernel modules.
+ */
 static void load_modules() {
     log_init_job("loading modules");
 
@@ -186,6 +193,9 @@ static void load_modules() {
     }
 }
 
+/*
+ * TODO: find NVMe support
+ */
 static char *resolve_device(char *dev) {
     static char resolved[256];
 
@@ -233,6 +243,9 @@ static char *resolve_device(char *dev) {
     return dev;
 }
 
+/*
+ * Switch root.
+ */
 static void switch_root() {
     chdir("/mnt/root");
     mount(".", "/", nullptr, MS_MOVE, nullptr);

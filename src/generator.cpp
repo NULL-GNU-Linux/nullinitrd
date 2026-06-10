@@ -27,6 +27,11 @@ Generator::Generator(const Config& cfg, const std::string& kernel_ver, bool v)
     };
 }
 
+/*
+ * Helper to create a directory.
+ * Arguments:
+ *  const fs::path& path - directory to create
+ */
 void Generator::create_directory(const fs::path& path) {
     if (verbose) {
         log_info("creating dir: " + path.string());
@@ -34,6 +39,9 @@ void Generator::create_directory(const fs::path& path) {
     fs::create_directories(path);
 }
 
+/*
+ * Creates the strucutre of the initramfs.
+ */
 void Generator::create_structure() {
     log_info("creating structure...");
     create_directory(work_dir / "usr/bin");
@@ -54,6 +62,9 @@ void Generator::create_structure() {
     }
 }
 
+/*
+ * Create UsrMerge symlinks.
+ */
 void Generator::create_symlinks() {
     log_info("creating symlinks...");
     auto safe_symlink = [this](const char* target, const fs::path& link) {
@@ -66,6 +77,12 @@ void Generator::create_symlinks() {
     safe_symlink("usr/lib64", work_dir / "lib64");
 }
 
+/*
+ * Helper to copy a file.
+ * Arguments:
+ *  const fs::path& src - source path
+ *  const fs::path& dst - destination path
+ */
 void Generator::copy_file(const fs::path& src, const fs::path& dst) {
     if (verbose) {
         log_info("copying " + src.string() + " -> " + dst.string());
@@ -78,6 +95,12 @@ void Generator::copy_file(const fs::path& src, const fs::path& dst) {
     }
 }
 
+/*
+ * Helper to find a program.
+ * Returns a std::string (path of the found binary), "" if not found.
+ * Arguments:
+ *  const std::string& name - program to find
+ */
 std::string Generator::find_binary(const std::string& name) {
     std::vector<std::string> paths = {
         "/usr/local/sbin", "/usr/local/bin",
@@ -268,6 +291,9 @@ void Generator::copy_module(const std::string& module) {
     pclose(pipe);
 }
 
+/*
+ * Copy kernel modules.
+ */
 void Generator::copy_modules() {
     log_info("copying kernel modules...");
     create_directory(work_dir / "usr/lib/modules" / kernel_version);
@@ -327,6 +353,9 @@ void Generator::create_init() {
     chmod(init_dst.c_str(), 0755);
 }
 
+/*
+ * Run hooks.
+ */
 void Generator::run_hooks() {
     log_info("running hooks...");
     HookManager hook_mgr(config, work_dir, kernel_version, verbose);
@@ -335,6 +364,11 @@ void Generator::run_hooks() {
     }
 }
 
+/*
+ * Find the compression command to use.
+ * Return the command to use, ofc.
+ * Defaults to zstd -19 -T0.
+ */
 std::string Generator::get_compression_cmd() {
     if (config.compression == "gzip") return "gzip -9";
     if (config.compression == "bzip2") return "bzip2 -9";
@@ -346,6 +380,11 @@ std::string Generator::get_compression_cmd() {
     return "zstd -19 -T0";
 }
 
+/*
+ * Pack the initramfs.
+ * Arguments:
+ *  const std::string& output - output file
+ */
 void Generator::pack(const std::string& output) {
     log_info("packing initramfs...");
     std::string cpio_cmd = "cd " + work_dir.string() + " && find . | cpio -o -H newc 2>/dev/null";

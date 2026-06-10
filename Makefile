@@ -1,5 +1,5 @@
 PACKAGE = nullinitrd
-VERSION = 1.0.0
+VERSION = 1.1
 -include .config
 CXX ?= g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -DVERSION=\"$(VERSION)\"
