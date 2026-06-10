@@ -1,5 +1,6 @@
 #include "generator.hpp"
 #include "hooks.hpp"
+#include "logger/log.hpp"
 #include <filesystem>
 #include <iostream>
 #include <algorithm>
@@ -12,7 +13,7 @@ Generator::Generator(const Config& cfg, const std::string& kernel_ver, bool v)
     char tmpl[] = "/tmp/nullinitrd.XXXXXX";
     char* tmp = mkdtemp(tmpl);
     if (!tmp) {
-        throw std::runtime_error(":: [!] failed to create temp directory");
+        throw std::runtime_error("failed to create temp directory");
     }
     chmod(tmp, 0755);
     work_dir = tmp;
@@ -28,13 +29,13 @@ Generator::Generator(const Config& cfg, const std::string& kernel_ver, bool v)
 
 void Generator::create_directory(const fs::path& path) {
     if (verbose) {
-        std::cout << ":: creating dir: " << path << std::endl;
+        log_info("creating dir: " + path.string());
     }
     fs::create_directories(path);
 }
 
 void Generator::create_structure() {
-    std::cout << ":: creating structure..." << std::endl;
+    log_job("creating structure...");
     create_directory(work_dir / "usr/bin");
     create_directory(work_dir / "usr/lib");
     create_directory(work_dir / "usr/lib64");
@@ -54,7 +55,7 @@ void Generator::create_structure() {
 }
 
 void Generator::create_symlinks() {
-    std::cout << ":: creating symlinks..." << std::endl;
+    log_job("creating symlinks...");
     auto safe_symlink = [this](const char* target, const fs::path& link) {
         if (fs::exists(link) || fs::is_symlink(link)) fs::remove(link);
         fs::create_symlink(target, link);
@@ -67,7 +68,7 @@ void Generator::create_symlinks() {
 
 void Generator::copy_file(const fs::path& src, const fs::path& dst) {
     if (verbose) {
-        std::cout << ":: copying " << src << " -> " << dst << std::endl;
+        log_info("copying " + src.string() + " -> " + dst.string());
     }
     fs::create_directories(dst.parent_path());
     fs::copy_file(src, dst, fs::copy_options::overwrite_existing);
@@ -135,7 +136,7 @@ void Generator::copy_binary_with_deps(const std::string& binary) {
     std::string bin_path = find_binary(binary);
     if (bin_path.empty()) {
         if (verbose) {
-            std::cerr << ":: [?] binary not found: " << binary << std::endl;
+            log_warning("binary not found: " + binary);
         }
         return;
     }
@@ -164,7 +165,7 @@ void Generator::copy_binary_with_deps(const std::string& binary) {
 }
 
 void Generator::copy_binaries() {
-    std::cout << ":: copying binaries..." << std::endl;
+    log_job("copying binaries...");
 
     copy_binary_with_deps("kmod");
     fs::path kmod_dst = work_dir / "usr/bin/kmod";
@@ -254,7 +255,7 @@ void Generator::copy_module(const std::string& module) {
             fs::create_directories(dst.parent_path());
             if (needs_decompress) {
                 if (verbose) {
-                    std::cout << ":: decompressing " << src << " -> " << dst << std::endl;
+                    log_info("decompressing " + src.string() + " -> " + dst.string());
                 }
                 std::string full_cmd = decompress_cmd + " '" + mod_file + "' > '" + dst.string() + "'";
                 system(full_cmd.c_str());
@@ -268,7 +269,7 @@ void Generator::copy_module(const std::string& module) {
 }
 
 void Generator::copy_modules() {
-    std::cout << ":: copying kernel modules..." << std::endl;
+    log_job("copying kernel modules...");
     create_directory(work_dir / "usr/lib/modules" / kernel_version);
 
     std::vector<std::string> modules_to_copy;
@@ -285,10 +286,10 @@ void Generator::copy_modules() {
         copy_module(mod);
     }
 
-    std::cout << ":: generating module dependencies..." << std::endl;
+    log_info("generating module dependencies...");
     std::string depmod_cmd = "depmod -b " + work_dir.string() + " " + kernel_version;
     if (system(depmod_cmd.c_str()) != 0) {
-        std::cerr << ":: [!] depmod failed, falling back to copying modules.dep" << std::endl;
+        log_warning("depmod failed, falling back to copying modules.dep");
         std::string dep_src = "/usr/lib/modules/" + kernel_version + "/modules.dep";
         if (fs::exists(dep_src)) {
             copy_file(dep_src, work_dir / "usr/lib/modules" / kernel_version / "modules.dep");
@@ -301,7 +302,7 @@ void Generator::copy_modules() {
 }
 
 void Generator::create_init() {
-    std::cout << ":: installing init..." << std::endl;
+    log_job("installing init...");
 
     std::vector<std::string> init_paths = {
         "/usr/share/nullinitrd/init",
@@ -318,7 +319,7 @@ void Generator::create_init() {
     }
 
     if (init_src.empty()) {
-        throw std::runtime_error(":: [!] init binary not found");
+        throw std::runtime_error("init binary not found");
     }
 
     fs::path init_dst = work_dir / "init";
@@ -327,7 +328,7 @@ void Generator::create_init() {
 }
 
 void Generator::run_hooks() {
-    std::cout << ":: running hooks..." << std::endl;
+    log_job("running hooks...");
     HookManager hook_mgr(config, work_dir, kernel_version, verbose);
     for (const auto& hook : config.hooks) {
         hook_mgr.run_hook(hook);
@@ -346,13 +347,13 @@ std::string Generator::get_compression_cmd() {
 }
 
 void Generator::pack(const std::string& output) {
-    std::cout << ":: packing initramfs..." << std::endl;
+    log_job("packing initramfs...");
     std::string cpio_cmd = "cd " + work_dir.string() + " && find . | cpio -o -H newc 2>/dev/null";
     std::string compress_cmd = get_compression_cmd();
     std::string full_cmd = cpio_cmd + " | " + compress_cmd + " > " + output;
     int ret = system(full_cmd.c_str());
     if (ret != 0) {
-        throw std::runtime_error(":: [!] failed to pack initramfs");
+        throw std::runtime_error("failed to pack initramfs");
     }
     fs::remove_all(work_dir);
 }

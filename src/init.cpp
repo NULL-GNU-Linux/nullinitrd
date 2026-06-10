@@ -11,9 +11,8 @@
 #include <sys/reboot.h>
 #include <unistd.h>
 #include <linux/reboot.h>
-
-#define MSG(x) write(STDOUT_FILENO, x, sizeof(x) - 1)
-#define ERR(x) write(STDERR_FILENO, x, sizeof(x) - 1)
+#include <string>
+#include "logger/log_init.hpp"
 
 static char cmdline[4096];
 static char root_dev[256] = "/dev/sda1";
@@ -25,31 +24,20 @@ static bool verbose = false;
 
 static char modules_to_load[4096] = "";
 
-static void print_str(const char *s) {
-    write(STDOUT_FILENO, s, strlen(s));
-}
-
-static void print_num(int n) {
-    char buf[16];
-    snprintf(buf, sizeof(buf), "%d", n);
-    print_str(buf);
-}
-
 static void panic(const char *msg) {
-    ERR(":: PANIC: ");
-    write(STDERR_FILENO, msg, strlen(msg));
-    ERR("\n:: dropping to infinite sleep\n");
+    char buf[512];
+    snprintf(buf, sizeof(buf), "PANIC: %s", msg);
+    log_init_err(buf);
+    log_init_err("dropping to infinite sleep");
     for (;;) sleep(3600);
 }
 
 static void do_mount(const char *src, const char *tgt, const char *type, unsigned long flags, const void *data) {
     mkdir(tgt, 0755);
     if (mount(src, tgt, type, flags, data) < 0 && errno != EBUSY) {
-        ERR(":: mount failed: ");
-        write(STDERR_FILENO, tgt, strlen(tgt));
-        ERR(" (");
-        print_str(strerror(errno));
-        ERR(")\n");
+        char buf[512];
+        snprintf(buf, sizeof(buf), "mount failed: %s (%s)", tgt, strerror(errno));
+        log_init_err(buf);
     }
 }
 
@@ -78,9 +66,7 @@ static void parse_cmdline() {
     if (cmdline[n-1] == '\n') cmdline[n-1] = '\0';
 
     if (verbose) {
-        MSG(":: cmdline: ");
-        print_str(cmdline);
-        MSG("\n");
+        log_init_info(std::string("cmdline: ").append(cmdline).c_str());
     }
 
     char *p = cmdline;
@@ -122,11 +108,11 @@ static void parse_cmdline() {
 }
 
 static void load_modules() {
-    MSG(":: loading modules\n");
+    log_init_job("loading modules");
 
     struct utsname uts;
     if (uname(&uts) < 0) {
-        ERR(":: uname failed\n");
+        log_init_err("uname failed");
         return;
     }
 
@@ -135,7 +121,7 @@ static void load_modules() {
 
     struct stat st;
     if (stat(moddir, &st) < 0) {
-        MSG("::   module dir not found, skipping\n");
+        log_init_info("module dir not found, skipping");
         return;
     }
 
@@ -160,9 +146,9 @@ static void load_modules() {
         };
         if (run_command("/usr/bin/modprobe", argv) == 0) {
             if (verbose) {
-                MSG("::   loaded: ");
-                print_str(default_modules[i]);
-                MSG("\n");
+                char buf[256];
+                snprintf(buf, sizeof(buf), "loaded: %s", default_modules[i]);
+                log_init_info(buf);
             }
             loaded++;
         }
@@ -183,9 +169,9 @@ static void load_modules() {
             };
             if (run_command("/usr/bin/modprobe", argv) == 0) {
                 if (verbose) {
-                    MSG("::   loaded: ");
-                    print_str(mod);
-                    MSG("\n");
+                    char buf[256];
+                    snprintf(buf, sizeof(buf), "loaded: %s", mod);
+                    log_init_info(buf);
                 }
                 loaded++;
             }
@@ -193,9 +179,11 @@ static void load_modules() {
         }
     }
 
-    MSG("::   loaded ");
-    print_num(loaded);
-    MSG(" modules\n");
+    {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "loaded %d modules", loaded);
+        log_init_info(buf);
+    }
 }
 
 static char *resolve_device(char *dev) {
@@ -220,9 +208,7 @@ static char *resolve_device(char *dev) {
         snprintf(link, sizeof(link), "/dev/disk/%s/%s", type, val);
 
         if (verbose) {
-            MSG("::   resolving: ");
-            print_str(link);
-            MSG("\n");
+            log_init_info(std::string("resolving: ").append(link).c_str());
         }
 
         for (int i = 0; i < 30; i++) {
@@ -238,10 +224,10 @@ static char *resolve_device(char *dev) {
                     return resolved;
                 }
             }
-            MSG(":: waiting for root device...\n");
+            log_init_job("waiting for root device...");
             sleep(1);
         }
-        ERR(":: failed to resolve device\n");
+        log_init_err("failed to resolve device");
     }
 
     return dev;
@@ -255,7 +241,7 @@ static void switch_root() {
 }
 
 int main() {
-    MSG(":: nullinitrd\n");
+    log_init_job("nullinitrd");
 
     do_mount("proc", "/proc", "proc", MS_NOSUID | MS_NOEXEC | MS_NODEV, nullptr);
     do_mount("sysfs", "/sys", "sysfs", MS_NOSUID | MS_NOEXEC | MS_NODEV, nullptr);
@@ -267,18 +253,18 @@ int main() {
     load_modules();
 
     if (root_delay > 0) {
-        MSG(":: waiting ");
-        print_num(root_delay);
-        MSG("s for root device\n");
+        char buf[64];
+        snprintf(buf, sizeof(buf), "waiting %ds for root device", root_delay);
+        log_init_job(buf);
         sleep(root_delay);
     }
 
     char *dev = resolve_device(root_dev);
-    MSG(":: mounting root: ");
-    print_str(dev);
-    MSG(" (");
-    print_str(root_type);
-    MSG(")\n");
+    {
+        char buf[512];
+        snprintf(buf, sizeof(buf), "mounting root: %s (%s)", dev, root_type);
+        log_init_job(buf);
+    }
 
     mkdir("/mnt/root", 0755);
     unsigned long mflags = 0;
@@ -287,21 +273,21 @@ int main() {
     for (int i = 0; i < 30; i++) {
         if (mount(dev, "/mnt/root", root_type, mflags, nullptr) == 0) break;
         if (i == 29) {
-            ERR(":: mount error: ");
-            print_str(strerror(errno));
-            ERR("\n");
+            char buf[256];
+            snprintf(buf, sizeof(buf), "mount error: %s", strerror(errno));
+            log_init_err(buf);
             panic("failed to mount root filesystem");
         }
         if (verbose) {
-            MSG("::   mount failed: ");
-            print_str(strerror(errno));
-            MSG("\n");
+            char buf[256];
+            snprintf(buf, sizeof(buf), "mount failed: %s", strerror(errno));
+            log_init_info(buf);
         }
-        MSG(":: retrying root mount...\n");
+        log_init_job("retrying root mount...");
         sleep(1);
     }
 
-    MSG(":: switching root\n");
+    log_init_job("switching root");
     umount("/proc");
     umount("/sys");
     umount("/dev");
@@ -309,9 +295,7 @@ int main() {
 
     switch_root();
 
-    MSG(":: exec ");
-    print_str(init_path);
-    MSG("\n");
+    log_init_job(std::string("exec ").append(init_path).c_str());
 
     char *argv[] = {init_path, nullptr};
     char *envp[] = {
@@ -322,9 +306,11 @@ int main() {
     };
     execve(init_path, argv, envp);
 
-    ERR(":: execve failed: ");
-    print_str(strerror(errno));
-    ERR("\n");
+    {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "execve failed: %s", strerror(errno));
+        log_init_err(buf);
+    }
     panic("failed to execute init");
 
     return 1;
