@@ -11,13 +11,16 @@ Config::Config(const std::string& path)
     parse_file(path);
 }
 
+/*
+ * Parse a config file, write the defaults to it if not found.
+ */
 void Config::parse_file(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
         // create the default config in const std::string& path
         mkdir("/etc/nullinitrd", 0755);
         std::ofstream configfile;
-        configfile.open("/etc/nullinitrd/config");
+        configfile.open(path);
         configfile << "CONFIG_STATIC=y\n";
         configfile << "CONFIG_DEBUG=n\n";
         configfile << "CONFIG_LTO=y\n";
@@ -67,6 +70,12 @@ std::string Config::get(const std::string& key, const std::string& default_val) 
     return it != config_map.end() ? it->second : default_val;
 }
 
+/*
+ * Get a boolean value from the config, return a bool.
+ * Arguments:
+ *  const std::string& key - key to check
+ *  bool default_val - use this value if empty
+ */
 bool Config::get_bool(const std::string& key, bool default_val) const {
     auto val = get(key, "");
     if (val.empty()) return default_val;
@@ -85,6 +94,10 @@ std::vector<std::string> Config::get_list(const std::string& key) const {
     return result;
 }
 
+/* Check if a feature is enabled, return a boolean.
+ * Arguments:
+ *  const std::string& feature - the feat to check for
+ */
 bool Config::is_enabled(const std::string& feature) const {
     return features.count(feature) > 0;
 }

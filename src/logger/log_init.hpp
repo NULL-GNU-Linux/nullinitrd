@@ -2,6 +2,12 @@
 #include <unistd.h>
 #include <cstring>
 
+/*
+ * Early print.
+ * TODO: fix the output borked, printing smth like:
+ *   ::Space is missing  *No newline?::Just broken
+ */
+
 static inline void log_init_job(const char *msg) {
     write(STDOUT_FILENO, "\e[94;1m::\e[0m ", 13);
     write(STDOUT_FILENO, msg, strlen(msg));

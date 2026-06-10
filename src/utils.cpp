@@ -2,7 +2,12 @@
 #include <cstdio>
 #include <array>
 #include <sys/utsname.h>
+
 namespace utils {
+
+/*
+ * Return the current kernel version, "" if not found.
+ */
 std::string get_kernel_version() {
     struct utsname buf;
     if (uname(&buf) == 0) {
@@ -11,11 +16,22 @@ std::string get_kernel_version() {
     return "";
 }
 
+/*
+ * Check if a command is installed.
+ * Arguments:
+ *  const std::string& cmd - command to check for
+ */
 bool command_exists(const std::string& cmd) {
     std::string check = "command -v " + cmd + " >/dev/null 2>&1";
     return system(check.c_str()) == 0;
 }
 
+
+/*
+ * Execute a command.
+ * Arguments:
+ *  const std::string& cmd - command to execute
+ */
 std::string execute_command(const std::string& cmd) {
     std::array<char, 128> buffer;
     std::string result;
@@ -24,7 +40,7 @@ std::string execute_command(const std::string& cmd) {
     while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
         result += buffer.data();
     }
-    
+
     pclose(pipe);
     return result;
 }
