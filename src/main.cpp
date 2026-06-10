@@ -12,13 +12,23 @@
 #include "generator.hpp"
 #include "hooks.hpp"
 #include "utils.hpp"
+#include "logger/log.hpp"
+
 namespace fs = std::filesystem;
+
+/* Print the current version of nullinitrd. */
 void print_version() {
-    std::cout << ":: nullinitrd v" << VERSION << std::endl;
-    std::cout << ":: NULL's Modular Initramfs Generator." << std::endl;
+    log_job("nullinitrd v" VERSION);
+    log_job("NULL's Modular Initramfs Generator.");
 }
 
+/*
+ * Print usage
+ * Arguments:
+ *  const char* prog - the program name, use with argv[0]
+ */
 void print_usage(const char* prog) {
+    std::cout << "nullinitrd - initramfs generator" << std::endl << std::endl;
     std::cout << "Usage: " << prog << " [OPTIONS]" << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "  -o, --output FILE    Output initramfs file" << std::endl;
@@ -60,10 +70,9 @@ int main(int argc, char* argv[]) {
         output_file = "/boot/initrd.img";
     }
 
-    std::cout << ":: nullinitrd" << std::endl;
-    std::cout << ":: linux " << kernel_version << std::endl;
-    std::cout << ":: output -> " << output_file << std::endl;
-    std::cout << ":: building initramfs..." << std::endl;
+    log_job("nullinitrd");
+    log_info("linux " + kernel_version);
+    log_info("writing output to " + output_file);
     try {
         Config cfg(config_file);
         Generator gen(cfg, kernel_version, verbose);
@@ -74,9 +83,9 @@ int main(int argc, char* argv[]) {
         gen.create_init();
         gen.run_hooks();
         gen.pack(output_file);
-        std::cout << ":: initramfs generated successfully: " << output_file << std::endl;
+        log_done("initramfs generated successfully: " + output_file);
     } catch (const std::exception& e) {
-        std::cerr << ":: [!] " << e.what() << std::endl;
+        log_error(e.what());
         return 1;
     }
 

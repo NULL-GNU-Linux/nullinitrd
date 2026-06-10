@@ -1,4 +1,5 @@
 #include "hooks.hpp"
+#include "logger/log.hpp"
 #include <iostream>
 #include <cstdlib>
 #include <sys/stat.h>
@@ -7,14 +8,14 @@ HookManager::HookManager(const Config& cfg, const fs::path& work,
     : config(cfg), work_dir(work), kernel_version(kver), verbose(v) {}
 
 void HookManager::run_script(const fs::path& script) {
-    std::cout << ":: [#] " << script << std::endl;
+    log_job(std::string("[#] ") + script.string());
     std::string cmd = "NULLINITRD_WORKDIR=" + work_dir.string() + 
                      " NULLINITRD_KERNEL=" + kernel_version +
                      " " + script.string();
     
     int ret = system(cmd.c_str());
     if (ret != 0) {
-        std::cerr << ":: [?] hook " << script << " exited with code " << ret << std::endl;
+        log_warning(std::string("hook ") + script.string() + " exited with code " + std::to_string(ret));
     }
 }
 
@@ -42,7 +43,7 @@ bool HookManager::find_and_run(const std::string& hook_name) {
 void HookManager::run_hook(const std::string& hook_name) {
     if (!find_and_run(hook_name)) {
         if (verbose) {
-            std::cerr << ":: [?] hook not found: " << hook_name << std::endl;
+            log_warning("hook not found: " + hook_name);
         }
     }
 }

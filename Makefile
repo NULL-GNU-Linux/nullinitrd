@@ -20,7 +20,7 @@ endif
 SRCDIR = src
 OBJDIR = obj
 BINDIR = bin
-GEN_SOURCES = $(SRCDIR)/main.cpp $(SRCDIR)/config.cpp $(SRCDIR)/generator.cpp $(SRCDIR)/hooks.cpp $(SRCDIR)/utils.cpp
+GEN_SOURCES = $(SRCDIR)/main.cpp $(SRCDIR)/config.cpp $(SRCDIR)/generator.cpp $(SRCDIR)/hooks.cpp $(SRCDIR)/utils.cpp $(SRCDIR)/logger/log.cpp
 GEN_OBJECTS = $(GEN_SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 GEN_TARGET = $(BINDIR)/$(PACKAGE)
 INIT_SOURCE = $(SRCDIR)/init.cpp
@@ -42,11 +42,9 @@ $(INIT_TARGET): $(INIT_OBJECT) | $(BINDIR)
 	$(CXX) $(INIT_OBJECT) -o $@ -static
 	strip $@
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-$(OBJDIR):
-	mkdir -p $(OBJDIR)
 
 $(BINDIR):
 	mkdir -p $(BINDIR)

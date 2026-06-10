@@ -1,7 +1,7 @@
 #include "config.hpp"
 #include <fstream>
 #include <sstream>
-#include <stdexcept>
+#include <sys/stat.h>
 
 Config::Config(const std::string& path)
     : compression("zstd"),
@@ -14,7 +14,18 @@ Config::Config(const std::string& path)
 void Config::parse_file(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
-        throw std::runtime_error(":: [!] cannot open config file: " + path);
+        // create the default config in const std::string& path
+        mkdir("/etc/nullinitrd", 0755);
+        std::ofstream configfile;
+        configfile.open("/etc/nullinitrd/config");
+        configfile << "CONFIG_STATIC=y\n";
+        configfile << "CONFIG_DEBUG=n\n";
+        configfile << "CONFIG_LTO=y\n";
+        configfile << "CONFIG_FEATURE_LVM=n\n";
+        configfile << "CONFIG_FEATURE_LUKS=n\n";
+        configfile << "CONFIG_FEATURE_MDADM=n\n";
+        configfile << "CONFIG_FEATURE_BTRFS=n\n";
+        configfile << "CONFIG_FEATURE_ZFS=n\n";
     }
 
     std::string line;
