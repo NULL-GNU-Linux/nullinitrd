@@ -81,7 +81,6 @@ int main(int argc, char* argv[]) {
         log_job("generating initrd");
         Config cfg(config_file);
         Generator gen(cfg, kernel_version, verbose);
-        gen.create_structure();
         gen.copy_binaries();
         gen.copy_libraries();
         gen.copy_modules();
