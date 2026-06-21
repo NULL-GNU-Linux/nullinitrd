@@ -1,11 +1,6 @@
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <vector>
-#include <string>
-#include <map>
-#include <algorithm>
 #include <cstdlib>
+#include <iostream>
+#include <string>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "config.hpp"
@@ -13,8 +8,6 @@
 #include "hooks.hpp"
 #include "utils.hpp"
 #include "logger/log.hpp"
-
-namespace fs = std::filesystem;
 
 /* Print the current version of nullinitrd. */
 void print_version() {
@@ -28,15 +21,22 @@ void print_version() {
  *  const char* prog - the program name, use with argv[0]
  */
 void print_usage(const char* prog) {
-    std::cout << "nullinitrd - initramfs generator" << std::endl << std::endl;
-    std::cout << "Usage: " << prog << " [OPTIONS]" << std::endl;
-    std::cout << "Options:" << std::endl;
+    std::cout << "\e[1mnullinitrd\e[0m: initramfs generator" << std::endl << std::endl;
+
+    std::cout << "\e[1mUsage\e[0m: " << prog << " [OPTIONS]" << std::endl;
+    std::cout << "\e[1mOptions\e[0m:" << std::endl;
     std::cout << "  -o, --output FILE    Output initramfs file" << std::endl;
     std::cout << "  -c, --config FILE    Configuration file" << std::endl;
     std::cout << "  -k, --kernel VER     Kernel version" << std::endl;
     std::cout << "  -v, --verbose        Verbose output" << std::endl;
     std::cout << "  -h, --help           Show this help" << std::endl;
-    std::cout << "      --version        Show version" << std::endl;
+    std::cout << "      --version        Show version" << std::endl << std::endl;
+
+    std::cout << "\e[1mCommands\e[0m:" << std::endl;
+    std::cout << "  hook-template NAME   Generate hook template" << std::endl << std::endl;
+
+    std::cout << "Author:      \e[1mneoapps-dev\e[0m <neo@obsidianos.xyz>" << std::endl;
+    std::cout << "Contributor: \e[1mmostypc123\e[0m  <mostypc123@redroselinux.org>" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -60,6 +60,9 @@ int main(int argc, char* argv[]) {
             config_file = argv[++i];
         } else if ((arg == "-k" || arg == "--kernel") && i + 1 < argc) {
             kernel_version = argv[++i];
+        } else if ((arg == "hook-template") && i + 1 < argc) {
+            create_hook_template(argv[++i]);
+            std::exit(0);
         }
     }
 

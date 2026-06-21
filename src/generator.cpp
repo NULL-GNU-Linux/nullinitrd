@@ -387,7 +387,7 @@ std::string Generator::get_compression_cmd() {
  */
 void Generator::pack(const std::string& output) {
     log_info("packing initramfs...");
-    std::string cpio_cmd = "cd " + work_dir.string() + " && find . | cpio -o -H newc 2>/dev/null";
+    std::string cpio_cmd = "cd " + work_dir.string() + " && find . | cpio -o -H newc";
     std::string compress_cmd = get_compression_cmd();
     std::string full_cmd = cpio_cmd + " | " + compress_cmd + " > " + output;
     int ret = system(full_cmd.c_str());
