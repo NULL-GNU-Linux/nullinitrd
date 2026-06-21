@@ -1,8 +1,10 @@
 #include "hooks.hpp"
 #include "logger/log.hpp"
-#include <iostream>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <sys/stat.h>
+
 HookManager::HookManager(const Config& cfg, const fs::path& work,
                          const std::string& kver, bool v)
     : config(cfg), work_dir(work), kernel_version(kver), verbose(v) {}
@@ -55,4 +57,53 @@ void HookManager::run_hook(const std::string& hook_name) {
     if (!find_and_run(hook_name)) {
         log_warning("hook not found: " + hook_name);
     }
+}
+
+void create_hook_template(const std::string& hook_name) {
+    log_job("Creating hook template");
+
+    std::vector<std::string> hook_paths = {
+        "/etc/nullinitrd/hooks",
+        "/usr/share/nullinitrd/hooks",
+        "/usr/local/share/nullinitrd/hooks"
+    };
+    std::string hook_dir = "none";
+
+    for (std::string hook_path : hook_paths) {
+        if (std::filesystem::exists(hook_path)) {
+            hook_dir = hook_path;
+            break;
+        }
+    }
+
+    if (hook_dir == "none") {
+        log_error("no hook directory exists. creating /etc/nullinitrd/hooks.");
+        try {
+            std::filesystem::create_directories("/etc/nullinitrd/hooks");
+            hook_dir = "/etc/nullinitrd/hooks";
+        } catch (const std::filesystem::filesystem_error& e) {
+            log_error("failed to create directory");
+            std::exit(1);
+        }
+    }
+
+    if (std::filesystem::exists(hook_dir + hook_name)) {
+        log_error("Hook " + hook_name + " already exists.");
+        std::exit(1);
+    }
+
+    try {
+        std::ofstream hook(hook_dir + hook_name);
+        hook << "#!/bin/sh" << std::endl;
+        hook << R"(if [ -z "$NULLINITRD_WORKDIR" ]; then)" << std::endl;
+        hook << "    echo 'Error: NULLINITRD_WORKDIR not set'" << std::endl;
+        hook << "    exit 1" << std::endl;
+        hook << "fi" << std::endl << std::endl;
+        hook << "# Your hook code here" << std::endl;
+    } catch (const std::filesystem::filesystem_error& e) {
+        log_error("Failed to write to the hook file");
+        std::exit(1);
+    }
+
+    log_done("Generated hook template");
 }
