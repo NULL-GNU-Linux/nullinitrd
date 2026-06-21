@@ -35,8 +35,9 @@ void print_usage(const char* prog) {
     std::cout << "\e[1mCommands\e[0m:" << std::endl;
     std::cout << "  hook-template NAME   Generate hook template" << std::endl << std::endl;
 
-    std::cout << "Author:      \e[1mneoapps-dev\e[0m <neo@obsidianos.xyz>" << std::endl;
-    std::cout << "Contributor: \e[1mmostypc123\e[0m  <mostypc123@redroselinux.org>" << std::endl;
+    std::cout << "Authors:" << std::endl;
+    std::cout << "  \e[1mneoapps-dev\e[0m <neo@obsidianos.xyz>" << std::endl;
+    std::cout << "  \e[1mmostypc123\e[0m  <mostypc123@redroselinux.org>" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
