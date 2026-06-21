@@ -10,6 +10,7 @@
 #include <sys/utsname.h>
 #include <sys/reboot.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 #include <linux/reboot.h>
 #include <string>
 #include "logger/log_init.hpp"
@@ -244,13 +245,13 @@ static char *resolve_device(char *dev) {
 }
 
 /*
- * Switch root.
+ * Switch root using the pivot_root syscall.
  */
 static void switch_root() {
     chdir("/mnt/root");
-    mount(".", "/", nullptr, MS_MOVE, nullptr);
-    chroot(".");
+    syscall(SYS_pivot_root, ".", ".");
     chdir("/");
+    umount2(".", MNT_DETACH);
 }
 
 int main() {
