@@ -1,58 +1,64 @@
-# nullinitrd
+# `nullinitrd`
 
-NULL's Modular Initramfs Generator.
+An initramfs generator used in NULL GNU/Linux and Redrose GNU/Linux written in C++.
 
-## Building
+#### Known issues
+- nullinitrd is broken with NVMe drives
+- currently no fully stable version; 1.1 will be released soon
 
-```sh
+## Build from source
+
+Clone the repo:
+
+```bash
+git clone https://github.com/NULL-GNU-Linux/nullinitrd --depth 1
+cd nullinitrd
+```
+
+Build:
+
+```bash
 make defconfig
+# make menuconfig
 make
 ```
 
-## Installation
+Install:
 
-```sh
+```bash
 sudo make install
 ```
 
-## Usage
+As always, the `DESTDIR` and `PREFIX` enviroment variables are supported.
 
-```sh
+## Configuration and usage
+
+## Rebuild initramfs
+
+Simply run:
+
+```bash
 nullinitrd
 ```
 
-### Options
+## Configuration file
 
-| Option | Description |
-|--------|-------------|
-| `-o, --output FILE` | Output initramfs file (default: `/boot/initrd.img`) |
-| `-c, --config FILE` | Configuration file (default: `/etc/nullinitrd/config`) |
-| `-k, --kernel VER` | Kernel version (default: current) |
-| `-v, --verbose` | Verbose output |
-| `-h, --help` | Show help |
-| `--version` | Show version |
+The `config.default` file has the file written to the configuration file
+during install. 
 
-## Configuration
-
-Edit `/etc/nullinitrd/config`:
-
-```sh
-COMPRESSION=zstd
-ROOTFS_TYPE=ext4
-INIT_PATH=/sbin/init
-AUTODETECT_MODULES=y
-MODULES=
-HOOKS=
-FEATURE_LVM=n
-FEATURE_LUKS=n
-FEATURE_MDADM=n
-FEATURE_BTRFS=n
-FEATURE_ZFS=n
-```
-
-### Compression
-
-Supported: `zstd`, `gzip`, `xz`, `lz4`, `bzip2`, `lzma`, `none`
+| Option | Default | Description |
+|--------|---------|-------------|
+| `COMPRESSION` | `zstd` | Compression algorithm to use. Supported: `zstd`, `gzip`, `xz`, `lz4`, `bzip2`, `lzma`, `none` |
+| `ROOTFS_TYPE` | `ext4` | Filesystem type to use when mounting root. |
+| `INIT_PATH` | `/sbin/init` | Path to the init binary (NOT the initramfs init.) |
+| `AUTODETECT_MODULES` | `n` | Automatically detect and include kernel modules. |
+| `MODULES` | empty | Additional kernel modules to include (space-separated). |
+| `HOOKS` | `keyboard` | Hooks to run during initramfs creation. |
+| `FEATURE_LVM` | `n` | Include LVM support. |
+| `FEATURE_LUKS` | `n` | Include LUKS support. |
+| `FEATURE_MDADM` | `n` | Include MDADM support. |
+| `FEATURE_BTRFS` | `n` | Include Btrfs support. |
+| `FEATURE_ZFS` | `n` | Include ZFS support. |
 
 ### Kernel Parameters
 
@@ -79,33 +85,17 @@ Run `make menuconfig` or edit `.config`:
 | `CONFIG_DEBUG=y` | Debug build |
 | `CONFIG_LTO=y` | Link-time optimization |
 
-## Default Modules
-
-The following modules are loaded by default (if available):
-
-- **NVMe**: `nvme`, `nvme_core`
-- **SATA/SCSI**: `ahci`, `sd_mod`, `sr_mod`
-- **Filesystems**: `ext4`, `btrfs`, `xfs`, `vfat`, `fat`
-- **USB**: `usb_storage`, `uas`, `ehci_hcd`, `ehci_pci`, `xhci_hcd`, `xhci_pci`, `ohci_hcd`, `ohci_pci`
-- **Device Mapper**: `dm_mod`, `dm_crypt`
-- **RAID**: `raid0`, `raid1`, `raid456`, `md_mod`
-
-Additional modules can be specified via the `MODULES` config option or the `rd.modules=` kernel parameter.
-
-## Features
-
-Enable features in the config file to include additional tools:
-
-| Feature | Description |
-|---------|-------------|
-| `FEATURE_LVM=y` | Include LVM tools (`lvm`) |
-| `FEATURE_LUKS=y` | Include disk encryption (`cryptsetup`) |
-| `FEATURE_MDADM=y` | Include software RAID (`mdadm`) |
-
 ## Hooks
 
-Custom hooks can be placed in `/usr/share/nullinitrd/hooks/` and enabled via the `HOOKS` config option.
+Custom hooks can be placed in `{/etc,/usr/[local]/share}/nullinitrd/hooks/` and enabled via the `HOOKS` config option.
 
-## Dependencies
+To create a hook template:
 
-`nullinitrd` currently only depends on `kmod`.
+```bash
+nullinitrd hook-template my-hook
+```
+
+## Authors
+
+- **[neoapps-dev](https://github.com/neoapps-dev)** \<neo@obsidianos.xyz>
+- **[mostypc123](https://github.com/mostypc123)** \<mostypc123@redroselinux.org>
