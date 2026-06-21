@@ -31,6 +31,14 @@ sudo make install
 
 As always, the `DESTDIR` and `PREFIX` enviroment variables are supported.
 
+## Quick test
+
+We have a script to create a bootable system with nullinitrd.
+
+```bash
+sh tests/test_system.sh path-to-kernel
+```
+
 ## Configuration and usage
 
 ## Rebuild initramfs
