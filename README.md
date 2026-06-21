@@ -95,6 +95,26 @@ To create a hook template:
 nullinitrd hook-template my-hook
 ```
 
+## Packaging
+
+### `.tar.gz`
+
+Run:
+
+```bash
+make tgz-pkg
+```
+
+Creates a tgz with a dir called `stage` with the files to install and a README.
+
+### [Car](https://github.com/redroselinux/car) `.tar.zst`
+
+Run:
+
+```bash
+make car-pkg
+```
+
 ## Authors
 
 - **[neoapps-dev](https://github.com/neoapps-dev)** \<neo@obsidianos.xyz>

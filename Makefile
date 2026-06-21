@@ -1,5 +1,5 @@
 PACKAGE = nullinitrd
-VERSION = 1.1
+VERSION = $(shell cat Version)
 -include .config
 CXX ?= g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -DVERSION=\"$(VERSION)\"
@@ -75,6 +75,11 @@ menuconfig:
 defconfig:
 	@cp config.defconfig .config
 	@echo "Default configuration written to .config"
+
+car-pkg:
+	@sh scripts/car_package.sh
+tgz-pkg:
+	@sh scripts/tgz_package.sh
 
 help:
 	@echo "nullinitrd $(VERSION)"

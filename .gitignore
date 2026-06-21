@@ -3,3 +3,6 @@
 /.config
 /arch-init
 /arch-init_functions
+/package
+/*.tar.zst
+/*.tar.gz
