@@ -16,7 +16,7 @@ public:
     void copy_binaries();
     void copy_libraries();
     void copy_modules();
-    void create_init();
+    void create_init(const std::string& diff_init = "no");
     void run_hooks();
     void pack(const std::string& output);
 

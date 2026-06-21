@@ -326,7 +326,7 @@ void Generator::copy_modules() {
     }
 }
 
-void Generator::create_init() {
+void Generator::create_init(const std::string& diff_init) {
     log_info("installing init...");
 
     std::vector<std::string> init_paths = {
@@ -334,6 +334,12 @@ void Generator::create_init() {
         "/usr/local/share/nullinitrd/init",
         "./bin/init"
     };
+
+    // i am a pro coder
+    if (diff_init != "no") {
+        log_info("using custom init " + diff_init);
+        init_paths = { diff_init };
+    }
 
     fs::path init_src;
     for (const auto& p : init_paths) {

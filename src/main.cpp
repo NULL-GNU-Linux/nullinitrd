@@ -30,6 +30,7 @@ void print_usage(const char* prog) {
     std::cout << "  -k, --kernel VER     Kernel version" << std::endl;
     std::cout << "  -v, --verbose        Verbose output" << std::endl;
     std::cout << "  -h, --help           Show this help" << std::endl;
+    std::cout << "      --custom-init    Use a custom init" << std::endl;
     std::cout << "      --version        Show version" << std::endl << std::endl;
 
     std::cout << "\e[1mCommands\e[0m:" << std::endl;
@@ -44,6 +45,7 @@ int main(int argc, char* argv[]) {
     std::string output_file;
     std::string config_file = "/etc/nullinitrd/config";
     std::string kernel_version;
+    std::string custom_init = "no";
     bool verbose = false;
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
@@ -64,6 +66,8 @@ int main(int argc, char* argv[]) {
         } else if ((arg == "hook-template") && i + 1 < argc) {
             create_hook_template(argv[++i]);
             std::exit(0);
+        } else if (arg == "--custom-init" && i + 1 < argc) {
+            custom_init = argv[++i];
         }
     }
 
@@ -84,7 +88,7 @@ int main(int argc, char* argv[]) {
         gen.copy_binaries();
         gen.copy_libraries();
         gen.copy_modules();
-        gen.create_init();
+        gen.create_init(custom_init);
         gen.run_hooks();
         gen.pack(output_file);
         log_done("initramfs generated successfully: " + output_file);
