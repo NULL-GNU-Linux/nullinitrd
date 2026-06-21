@@ -391,10 +391,12 @@ void Generator::pack(const std::string& output) {
     std::string full_cmd = cpio_cmd + " | " + compress_cmd + " > " + output;
     int ret = system(full_cmd.c_str());
     if (ret != 0) {
+        fs::remove_all(work_dir);
+        throw std::runtime_error("failed to pack initramfs");
+    }
+    if (!fs::exists(output)) {
+        fs::remove_all(work_dir);
         throw std::runtime_error("failed to pack initramfs");
     }
     fs::remove_all(work_dir);
-    if (fs::exists(output)) {
-        throw std::runtime_error("failed to pack initramfs");
-    }
 }
