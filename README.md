@@ -1,6 +1,6 @@
 # `nullinitrd`
 
-An initramfs generator used in NULL GNU/Linux and Redrose GNU/Linux written in C++.
+An initramfs generator used in [NULL GNU/Linux](https://null.obsidianos.xyz) and [Redrose GNU/Linux](https://redroselinux.org/) written in C++.
 
 #### Known issues
 - nullinitrd is broken with NVMe drives
