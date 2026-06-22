@@ -16,19 +16,23 @@ Config::Config(const std::string& path)
  */
 void Config::parse_file(const std::string& path) {
     std::ifstream file(path);
+
     if (!file.is_open()) {
-        // create the default config in const std::string& path
         mkdir("/etc/nullinitrd", 0755);
-        std::ofstream configfile;
-        configfile.open(path);
-        configfile << "CONFIG_STATIC=y\n";
-        configfile << "CONFIG_DEBUG=n\n";
-        configfile << "CONFIG_LTO=y\n";
-        configfile << "CONFIG_FEATURE_LVM=n\n";
-        configfile << "CONFIG_FEATURE_LUKS=n\n";
-        configfile << "CONFIG_FEATURE_MDADM=n\n";
-        configfile << "CONFIG_FEATURE_BTRFS=n\n";
-        configfile << "CONFIG_FEATURE_ZFS=n\n";
+
+        {
+            std::ofstream configfile(path);
+            configfile << "CONFIG_STATIC=y\n";
+            configfile << "CONFIG_DEBUG=n\n";
+            configfile << "CONFIG_LTO=y\n";
+            configfile << "CONFIG_FEATURE_LVM=n\n";
+            configfile << "CONFIG_FEATURE_LUKS=n\n";
+            configfile << "CONFIG_FEATURE_MDADM=n\n";
+            configfile << "CONFIG_FEATURE_BTRFS=n\n";
+            configfile << "CONFIG_FEATURE_ZFS=n\n";
+        }
+
+        file.open(path);
     }
 
     std::string line;
