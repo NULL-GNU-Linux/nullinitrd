@@ -129,7 +129,7 @@ static void load_modules() {
 
     struct stat st;
     if (stat(moddir, &st) < 0) {
-        log_init_info("module dir not found, skipping");
+        log_init_warn("module dir not found, skipping");
         return;
     }
 
