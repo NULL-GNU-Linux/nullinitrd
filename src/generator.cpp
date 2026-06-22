@@ -375,12 +375,12 @@ void Generator::run_hooks() {
  * Defaults to zstd -19 -T0.
  */
 std::string Generator::get_compression_cmd() {
-    if (config.compression == "gzip") return "gzip -9";
-    if (config.compression == "bzip2") return "bzip2 -9";
-    if (config.compression == "xz") return "xz -9 --check=crc32";
-    if (config.compression == "lz4") return "lz4 -l -9";
-    if (config.compression == "zstd") return "zstd -19 -T0";
-    if (config.compression == "lzma") return "lzma -9";
+    if (config.compression == "gzip") return "gzip";
+    if (config.compression == "bzip2") return "bzip2";
+    if (config.compression == "xz") return "xz --check=crc32";
+    if (config.compression == "lz4") return "lz4";
+    if (config.compression == "zstd") return "zstd -T0";
+    if (config.compression == "lzma") return "lzma";
     if (config.compression == "none") return "cat";
     return "zstd -19 -T0";
 }
