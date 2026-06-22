@@ -4,7 +4,6 @@ An initramfs generator used in [NULL GNU/Linux](https://null.obsidianos.xyz) and
 
 #### Known issues
 - nullinitrd is broken with NVMe drives
-- currently no fully stable version; 1.1 will be released soon
 
 ## Build from source
 
